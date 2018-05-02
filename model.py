@@ -52,8 +52,9 @@ class Encoder(nn.Module):
         conv_img = self.conv(img)
         avg_channel = conv_img.view(batch_size, 256, -1).mean(dim=2)
         mean = self.dense(F.dropout(avg_channel, p=0.1))
-        log_var = self.dense_var(F.dropout(avg_channel, p=0.1))
-        return mean, log_var
+        log_std = self.dense_var(F.dropout(avg_channel, p=0.1))
+        return mean, log_std
+
 
 class Decoder(nn.Module):
     def __init__(self, embedding_size=128):
@@ -115,6 +116,7 @@ class Decoder(nn.Module):
     def forward(self, latent):
         batch_size = latent.shape[0]
         avg_channel = self.dense(latent)
+        avg_channel = F.dropout(avg_channel, p=0.1)
         avg_channel = avg_channel[:, :, None,
                       None, None].expand(batch_size, 256, 3, 4, 3) * 1
         rec = self.deconv(avg_channel)
@@ -131,11 +133,11 @@ class VAE(nn.Module):
         self.decoder = Decoder(embedding_dim)
 
     def forward(self, img):
-        latent, log_var = self.encoder(img)
+        latent, log_std = self.encoder(img)
         if self.training:
             eps = randn_like(latent)
-            latent = latent + torch.exp(log_var / 2) * eps
-            penalty = gaussian_kl(latent, log_var)
+            latent = latent + torch.exp(log_std) * eps
+            penalty = gaussian_kl(latent, log_std)
         else:
             penalty = 0
         return self.decoder(latent), penalty
@@ -144,6 +146,6 @@ class VAE(nn.Module):
         return
 
 
-def gaussian_kl(mean, log_var):
-    return torch.mean(- 0.5 * log_var +
-                      0.5 * (mean ** 2 + torch.exp(log_var)) - .5)
+def gaussian_kl(mean, log_std):
+    return .5 * torch.mean(mean ** 2 + torch.exp(log_std * 2)
+                           - log_std - 1)

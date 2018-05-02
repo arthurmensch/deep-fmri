@@ -30,12 +30,17 @@ class NumpyDatasetMem(Dataset):
         return self.data[None, :, :, :, index]
 
 
-def get_dataset(subject=100307, output_dir=None):
+def get_dataset(subject=100307, output_dir=None, in_memory=False):
+    if in_memory:
+        dataset_type = NumpyDatasetMem
+    else:
+        dataset_type = NumpyDataset
     if output_dir is None:
         output_dir = expanduser('~/data/HCP_masked')
     datasets = []
     for filename in glob.glob(join(output_dir, '%s_REST*.npy' % subject)):
-        datasets.append(NumpyDatasetMem(filename))
-    dataset = ConcatDataset(datasets)
-    return dataset
+        datasets.append(dataset_type(filename))
+    train_dataset = ConcatDataset(datasets[:-1])
+    test_dataset = datasets[-1]
+    return train_dataset, test_dataset
 
