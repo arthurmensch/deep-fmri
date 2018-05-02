@@ -1,9 +1,5 @@
-import math
-
 import torch
-import torch.nn.functional as F
 from os.path import expanduser
-from torch.optim import Adam
 from torch.utils.data import DataLoader
 
 from data import get_dataset
@@ -16,4 +12,9 @@ train_loader = DataLoader(train_dataset, batch_size=32,
 test_loader = DataLoader(test_dataset, batch_size=32,
                          shuffle=False)
 model = VAE()
-model = torch.save(state_dict, expanduser('~/output/deep-fmri/%s' % name))
+name = 'vae_e_42_loss_1.1013e+06.pkl'
+model = torch.load(expanduser('~/output/deep-fmri/%s' % name))
+
+data = test_dataset[0]
+rec = model(data)
+
