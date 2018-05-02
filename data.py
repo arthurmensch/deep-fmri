@@ -15,7 +15,19 @@ class NumpyDataset(Dataset):
 
     def __getitem__(self, index):
         data = np.load(self.filename, mmap_mode='r')
-        return torch.Tensor(data[:, :, :, index])
+        return torch.Tensor(data[None, :, :, :, index])
+
+
+class NumpyDatasetMem(Dataset):
+    def __init__(self, filename):
+        self.data = torch.Tensor(np.load(filename,
+                                         mmap_mode=None))
+
+    def __len__(self):
+        return self.data.shape[3]
+
+    def __getitem__(self, index):
+        return self.data[None, :, :, :, index]
 
 
 def get_dataset(subject=100307, output_dir=None):
@@ -23,7 +35,7 @@ def get_dataset(subject=100307, output_dir=None):
         output_dir = expanduser('~/data/HCP_masked')
     datasets = []
     for filename in glob.glob(join(output_dir, '%s_REST*.npy' % subject)):
-        datasets.append(NumpyDataset(filename))
+        datasets.append(NumpyDatasetMem(filename))
     dataset = ConcatDataset(datasets)
     return dataset
 
