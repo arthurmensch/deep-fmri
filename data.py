@@ -42,5 +42,8 @@ def get_dataset(subject=100307, output_dir=None, in_memory=False):
         datasets.append(dataset_type(filename))
     train_dataset = ConcatDataset(datasets[:-1])
     test_dataset = datasets[-1]
-    return train_dataset, test_dataset
+    mask = np.load(expanduser('~/data/HCP_masked/%s_mask.npy'
+                              % subject))
+    mask = torch.from_numpy(mask).byte()
+    return train_dataset, test_dataset, mask
 
