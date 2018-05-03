@@ -13,7 +13,8 @@ test_loader = DataLoader(test_dataset, batch_size=32,
                          shuffle=False)
 model = VAE()
 name = 'vae_e_42_loss_1.1013e+06.pkl'
-model = torch.load(expanduser('~/output/deep-fmri/%s' % name))
+model = torch.load(expanduser('/storage/store/work/amensch/output/'
+                              'deep-fmri/%s' % name))
 
 data = test_dataset[0]
 rec = model(data)

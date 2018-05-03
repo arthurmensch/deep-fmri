@@ -415,15 +415,18 @@ def main():
         mask = nibabel.Nifti1Image(data, affine)
         masker = NiftiMasker(smoothing_fwhm=None, mask_img=mask,
                              memory_level=0).fit()
-        Parallel(n_jobs=10, verbose=10)(delayed(single_unmask)
-                                        (index, filename, masker)
-                                        for index, filename in
-                                        sub_df['filename'].iteritems())
-        paradigm_files = sub_df.iloc[:-4][['filename', 'feat_file']]
-        Parallel(n_jobs=10, verbose=10)(delayed(single_paradigm)
-                                        (index, design_file)
-                                        for index, design_file in
-                                        paradigm_files.iterrows())
+        mask = masker.mask_img_.get_data()
+        output_dir = expanduser('~/data/HCP_masked')
+        np.save(join(output_dir, '%s_mask' % subject), mask)
+        # Parallel(n_jobs=10, verbose=10)(delayed(single_unmask)
+        #                                 (index, filename, masker)
+        #                                 for index, filename in
+        #                                 sub_df['filename'].iteritems())
+        # paradigm_files = sub_df.iloc[:-4][['filename', 'feat_file']]
+        # Parallel(n_jobs=10, verbose=10)(delayed(single_paradigm)
+        #                                 (index, design_file)
+        #                                 for index, design_file in
+        #                                 paradigm_files.iterrows())
 
 
 def single_unmask(index, filename, masker):
