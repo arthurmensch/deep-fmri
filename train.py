@@ -21,7 +21,7 @@ test_loader = DataLoader(test_dataset, batch_size=batch_size,
                          shuffle=False)
 model = VAE()
 
-device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 model = model.to(device)
 mask = mask.to(device)
 
@@ -42,18 +42,20 @@ for epoch in range(n_epochs):
     verbose_penalty = 0
     verbose_batch = 0
     for this_data in train_loader:
-        this_data = this_data.to(device)
+        model.train()
         model.zero_grad()
+        this_data = this_data.to(device)
         rec, penalty = model(this_data)
         loss = loss_function(rec, this_data)
-        loss += penalty
-        loss.backward()
+        elbo = loss + penalty
+        elbo.backward()
         optimizer.step()
         verbose_loss += loss.item()
         verbose_penalty += penalty.item()
         epoch_batch += 1
         verbose_batch += 1
         if epoch_batch % 10 == 0:
+            model.eval()
             with torch.no_grad():
                 val_batch = 0
                 val_loss = 0
@@ -62,13 +64,11 @@ for epoch in range(n_epochs):
                     this_test_data = this_test_data.to(device)
                     rec, this_val_penalty = model(this_test_data)
                     this_val_loss = loss_function(rec, this_test_data)
-                    this_val_loss += this_val_penalty
                     val_loss += this_val_loss.item()
                     val_penalty += this_val_penalty.item()
                     val_batch += 1
-                val_loss /= val_batch
-                val_penalty /= val_batch
-
+            val_loss /= val_batch
+            val_penalty /= val_batch
             verbose_loss /= verbose_batch
             verbose_penalty /= verbose_batch
             print('Epoch %i, batch %i/%i,'
@@ -76,8 +76,8 @@ for epoch in range(n_epochs):
                   'train_penalty: %4e,'
                   'val_objective: %4e,'
                   'val_penalty: %4e' % (epoch, epoch_batch, n_batch,
-                                         verbose_loss, verbose_penalty,
-                                         val_loss, val_penalty))
+                                        verbose_loss, verbose_penalty,
+                                        val_loss, val_penalty))
             verbose_batch = 0
             train_loss = 0
             penalty = 0

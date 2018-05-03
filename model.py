@@ -53,8 +53,8 @@ class Encoder(nn.Module):
         avg_channel = conv_img.view(batch_size, 256, -1).mean(dim=2)
         avg_channel = F.dropout(avg_channel, p=0.1)
         mean = self.dense(avg_channel)
-        log_std = self.dense_var(avg_channel)
-        return mean, log_std
+        log_var = self.dense_var(avg_channel)
+        return mean, log_var
 
 
 class Decoder(nn.Module):
@@ -113,23 +113,24 @@ class VAE(nn.Module):
         self.decoder = Decoder(embedding_dim)
 
     def forward(self, img):
-        latent, log_std = self.encoder(img)
+        mean, log_var = self.encoder(img)
+        penalty = gaussian_kl(mean, log_var)
         if self.training:
-            eps = randn_like(latent)
-            latent = latent + torch.exp(log_std) * eps
-            penalty = gaussian_kl(latent, log_std)
+            eps = randn_like(mean)
+            latent = mean + torch.exp(log_var / 2) * eps
         else:
-            penalty = 0
+            latent = mean
         return self.decoder(latent), penalty
 
 
-def gaussian_kl(mean, log_std):
-    return .5 * torch.sum(mean ** 2 + torch.exp(log_std * 2)
-                          - log_std - 1) / mean.shape[0]
+def gaussian_kl(mean, log_var):
+    return .5 * torch.sum(mean ** 2 + torch.exp(log_var)
+                          - log_var - 1) / mean.shape[0]
 
 
 def masked_mse(pred, target, mask):
     diff = pred - target
+    mask = mask ^ 1
     mask = mask[None, None, ...]
     diff.masked_fill_(mask, 0.)
     return torch.sum(diff ** 2) / diff.shape[0]

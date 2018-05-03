@@ -418,10 +418,10 @@ def main():
         mask = masker.mask_img_.get_data()
         output_dir = expanduser('~/data/HCP_masked')
         np.save(join(output_dir, '%s_mask' % subject), mask)
-        # Parallel(n_jobs=10, verbose=10)(delayed(single_unmask)
-        #                                 (index, filename, masker)
-        #                                 for index, filename in
-        #                                 sub_df['filename'].iteritems())
+        Parallel(n_jobs=15, verbose=10)(delayed(single_unmask)
+                                        (index, filename, masker)
+                                        for index, filename in
+                                        sub_df['filename'].iteritems())
         # paradigm_files = sub_df.iloc[:-4][['filename', 'feat_file']]
         # Parallel(n_jobs=10, verbose=10)(delayed(single_paradigm)
         #                                 (index, design_file)
@@ -441,7 +441,7 @@ def single_unmask(index, filename, masker):
         img_2d = masker.transform(sub_img).astype('float32')
         img_masked = masker.inverse_transform(img_2d)
         del img_2d
-        data = img_masked.get_data()
+        data = img_masked.get_data() / 16000
         del img_masked
         output_dir = expanduser('~/data/HCP_masked')
         np.save(join(output_dir, name), data)
