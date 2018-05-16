@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import torch
 from os.path import expanduser, join
+from skimage.morphology import dilation, binary_dilation
 from torch.utils.data import Dataset, ConcatDataset
 
 
@@ -44,6 +45,13 @@ def get_dataset(subject=100307, output_dir=None, in_memory=False):
     test_dataset = datasets[-1]
     mask = np.load(expanduser('~/data/HCP_masked/%s_mask.npy'
                               % subject))
+    mask = mask.astype('bool')
+    print('Mask', mask.astype('float').sum(), 'voxels')
+    for i in range(2):
+        mask = binary_dilation(mask)
+    mask = mask.astype('uint8')
+    print('Dilated mask', mask.astype('float').sum(), 'voxels')
     mask = torch.from_numpy(mask).byte()
+
     return train_dataset, test_dataset, mask
 

@@ -51,7 +51,7 @@ class Encoder(nn.Module):
         img = self.pad(img)
         conv_img = self.conv(img)
         avg_channel = conv_img.view(batch_size, 256, -1).mean(dim=2)
-        avg_channel = F.dropout(avg_channel, p=0.1)
+        # avg_channel = F.dropout(avg_channel, p=0.1)
         mean = self.dense(avg_channel)
         log_var = self.dense_var(avg_channel)
         return mean, log_var
@@ -96,7 +96,7 @@ class Decoder(nn.Module):
     def forward(self, latent):
         batch_size = latent.shape[0]
         avg_channel = self.dense(latent)
-        avg_channel = F.dropout(avg_channel, p=0.1)
+        # avg_channel = F.dropout(avg_channel, p=0.1)
         avg_channel = avg_channel[:, :, None,
                       None, None].expand(batch_size, 256, 3, 4, 3) * 1
         rec = self.deconv(avg_channel)
